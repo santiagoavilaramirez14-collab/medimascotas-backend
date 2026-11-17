@@ -14,7 +14,15 @@ let pool = null;
 let isConnected = false;
 
 if (mysql) {
-  pool = mysql.createPool({
+  const isCloudDb = process.env.DB_SSL === 'true' || 
+                    (process.env.DB_HOST && (
+                      process.env.DB_HOST.includes('aivencloud.com') || 
+                      process.env.DB_HOST.includes('tidbcloud.com') ||
+                      process.env.DB_HOST.includes('clever-cloud.com') ||
+                      (process.env.DB_HOST !== 'localhost' && process.env.DB_HOST !== '127.0.0.1' && process.env.NODE_ENV === 'production')
+                    ));
+
+  const poolOptions = {
     host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER || 'root',
@@ -23,7 +31,13 @@ if (mysql) {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
-  });
+  };
+
+  if (isCloudDb) {
+    poolOptions.ssl = { rejectUnauthorized: false };
+  }
+
+  pool = mysql.createPool(poolOptions);
 }
 
 // Verificacion asincrona de la conexion sin bloquear la inicializacion

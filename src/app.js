@@ -11,9 +11,21 @@ const userRoutes = require('./routes/user.routes');
 const apiRoutes = require('./routes/index');
 
 // CORS: antes de las rutas
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: (origin, callback) => {
+    if (!origin || !process.env.FRONTEND_URL || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(new Error(`Bloqueado por CORS: Origen ${origin} no permitido`));
+  },
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middlewares globales
